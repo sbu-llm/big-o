@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>نمودار رشد توابع — پیچیدگی زمانی</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --wc:15,23,42; --bg:#f4f6fb; --bg2:#fff; --panel:rgba(255,255,255,.85); --panel2:rgba(var(--wc),.06);
+  --line:rgba(var(--wc),.14); --ink:#0f172a; --mute:#5b6784;
+  --v:#7c3aed; --c:#0891b2; --g:#059669; --a:#d97706; --p:#db2777; --r:#e11d48;
+  --radius:18px; --shadow:0 18px 50px -24px rgba(15,23,42,.35); --tipbg:rgba(255,255,255,.97);
+  --cgrid:rgba(15,23,42,.08); --caxis:rgba(15,23,42,.35); --ctext:#5b6784; --cbg:#ffffff; --cguide:rgba(15,23,42,.45);
+  --glow1:rgba(124,58,237,.12); --glow2:rgba(8,145,178,.10);
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --wc:255,255,255; --bg:#070b16; --bg2:#0d1428; --panel:rgba(255,255,255,.045); --line:rgba(255,255,255,.11); --ink:#e9edf9; --mute:#94a1c2;
+    --v:#8b5cf6; --c:#22d3ee; --g:#34d399; --a:#fbbf24; --p:#f472b6; --r:#fb7185; --tipbg:rgba(10,16,34,.94); --shadow:0 18px 50px -20px rgba(0,0,0,.65);
+    --cgrid:rgba(255,255,255,.07); --caxis:rgba(255,255,255,.28); --ctext:#94a1c2; --cbg:#0b1020; --cguide:rgba(255,255,255,.4);
+    --glow1:rgba(139,92,246,.24); --glow2:rgba(34,211,238,.15);
+  }
+}
+:root[data-theme="dark"]{
+  --wc:255,255,255; --bg:#070b16; --bg2:#0d1428; --panel:rgba(255,255,255,.045); --line:rgba(255,255,255,.11); --ink:#e9edf9; --mute:#94a1c2;
+  --v:#8b5cf6; --c:#22d3ee; --g:#34d399; --a:#fbbf24; --p:#f472b6; --r:#fb7185; --tipbg:rgba(10,16,34,.94); --shadow:0 18px 50px -20px rgba(0,0,0,.65);
+  --cgrid:rgba(255,255,255,.07); --caxis:rgba(255,255,255,.28); --ctext:#94a1c2; --cbg:#0b1020; --cguide:rgba(255,255,255,.4);
+  --glow1:rgba(139,92,246,.24); --glow2:rgba(34,211,238,.15);
+}
+body.cx{background:radial-gradient(1000px 520px at 88% -8%,var(--glow1),transparent 60%),radial-gradient(900px 500px at -8% 6%,var(--glow2),transparent 55%),var(--bg);background-attachment:fixed}
+body.cx::before{opacity:.35}
+.cx-btn.primary,.cx-btn.primary:hover{color:#fff}
+.n0-seg button.on{color:#fff}
+.cx-pill,.cx-toast{color:var(--ink)}
+.cx-toast{background:var(--bg2)}
+.cx-sel option{background:var(--bg2);color:var(--ink)}
+body.cx{font-family:'Vazirmatn',Tahoma,'Segoe UI',sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body.cx{
+  background:
+    radial-gradient(1100px 560px at 88% -8%, rgba(139,92,246,.24), transparent 60%),
+    radial-gradient(900px 520px at -8% 6%, rgba(34,211,238,.15), transparent 55%),
+    radial-gradient(800px 600px at 50% 120%, rgba(244,114,182,.10), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--ink); font-family:'Vazirmatn',Tahoma,sans-serif; line-height:1.9; min-height:100vh;
+}
+body.cx::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.5;
+  background-image:linear-gradient(rgba(var(--wc),.035) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--wc),.035) 1px,transparent 1px);
+  background-size:44px 44px; mask-image:radial-gradient(ellipse at 50% 0%,#000 30%,transparent 75%);
+  -webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 30%,transparent 75%);
+}
+.cx-wrap{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:28px 18px 120px}
+.cx-wrap.wide{max-width:1280px}
+.cx-back{display:inline-flex;align-items:center;gap:8px;color:var(--mute);text-decoration:none;font-weight:600;font-size:14px;margin-bottom:16px;transition:.2s}
+.cx-back:hover{color:var(--c)}
+/* hero */
+.cx-hero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:24px;padding:28px 30px;margin-bottom:22px;
+  background:linear-gradient(135deg,rgba(139,92,246,.22),rgba(34,211,238,.10) 60%,rgba(var(--wc),.03));box-shadow:var(--shadow)}
+.cx-hero::after{content:"O(n log n)";position:absolute;left:-10px;bottom:-22px;font:800 84px/1 'Vazirmatn',monospace;direction:ltr;color:rgba(var(--wc),.045);letter-spacing:-2px;pointer-events:none;white-space:nowrap}
+.cx-hero h1{margin:0 0 4px;font-size:26px;font-weight:900;letter-spacing:-.3px}
+.cx-hero p{margin:0;color:var(--mute);font-size:14px;max-width:70ch}
+/* cards */
+.cx-card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-bottom:18px;box-shadow:var(--shadow);backdrop-filter:blur(8px)}
+.cx-card h2,.cx-card h3{margin:0 0 10px;font-weight:800}
+.cx-muted{color:var(--mute)}
+.cx-small{font-size:13px}
+/* buttons */
+.cx-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+  padding:9px 18px;border-radius:12px;font:700 14px 'Vazirmatn',Tahoma,sans-serif;cursor:pointer;text-decoration:none;transition:.18s}
+.cx-btn:hover{background:rgba(var(--wc),.14);transform:translateY(-1px);color:var(--ink)}
+.cx-btn.primary{background:linear-gradient(135deg,var(--v),#6d5bf0 55%,var(--c));border-color:transparent;color:var(--ink);box-shadow:0 10px 28px -10px rgba(139,92,246,.8)}
+.cx-btn.primary:hover{filter:brightness(1.1);color:#fff}
+.cx-btn.good{background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:var(--g)}
+.cx-btn.danger{background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.4);color:var(--r)}
+.cx-btn.sm{padding:5px 12px;font-size:12.5px;border-radius:10px}
+.cx-btn.block{width:100%}
+.cx-btn[disabled]{opacity:.5;pointer-events:none}
+.cx-icon-btn{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--mute);cursor:pointer;transition:.15s;font-size:14px;padding:0}
+.cx-icon-btn:hover{color:var(--ink);background:var(--panel2)}
+.cx-icon-btn.del:hover{color:var(--r);border-color:rgba(251,113,133,.5)}
+.cx-sel option{background:#10172b;color:#fff}
+.cx-label{display:block;font-size:12.5px;font-weight:700;color:var(--mute);margin:12px 0 5px}
+.cx-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.cx-row>.grow{flex:1;min-width:180px}
+.cx-check{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;font-weight:600;user-select:none}
+.cx-check input{accent-color:var(--v);width:17px;height:17px}
+.cx-hint{font-size:12.5px;color:var(--mute);display:flex;align-items:center;gap:6px}
+
+  .pl-grid{display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}
+  @media(max-width:980px){.pl-grid{grid-template-columns:1fr}}
+  .pl-presets{display:flex;flex-wrap:wrap;gap:6px;direction:ltr}
+  .pl-presets button{height:36px;padding:0 11px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;transition:.15s}
+  .pl-presets button:hover{border-color:var(--v)}
+  .pl-presets button.on{background:rgba(139,92,246,.28);border-color:var(--v)}
+  .pl-fn{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .pl-dot{width:26px;height:26px;border-radius:8px;border:2px solid rgba(var(--wc),.25);cursor:pointer;flex:none;transition:.15s}
+  .pl-dot.off{opacity:.25;background:transparent!important}
+  .pl-fn .cx-in{font-size:14px;padding:7px 10px}
+  .pl-fn .cx-in.bad{border-color:var(--r);background:rgba(251,113,133,.08)}
+  .pl-err{color:var(--r);font-size:12px;margin:-4px 0 8px 0;direction:rtl}
+  .pl-canvas-wrap{position:relative;border-radius:14px;overflow:hidden;background:var(--cbg);border:1px solid var(--line);touch-action:pan-y}
+  canvas#cv{display:block;cursor:crosshair}
+  .pl-tip{position:absolute;pointer-events:none;z-index:5;padding:8px 12px;border-radius:12px;background:var(--tipbg);border:1px solid var(--line);font-size:12.5px;direction:ltr;box-shadow:var(--shadow);display:none;white-space:nowrap}
+  .pl-tip b{display:block;margin-bottom:3px;color:var(--ink)}
+  .pl-tip i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+  .pl-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  .pl-seg{display:inline-flex;padding:3px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+  .pl-seg button{border:0;background:transparent;color:var(--mute);padding:5px 14px;border-radius:9px;font:700 13px 'Vazirmatn';cursor:pointer}
+  .pl-seg button.on{background:var(--panel2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+  table.pl-t{width:100%;border-collapse:collapse;font-size:13px;direction:ltr}
+  table.pl-t th,table.pl-t td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}
+  table.pl-t th{color:var(--mute);font-weight:700}
+  .n0-box{margin-top:6px;padding:12px;border-radius:14px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.3)}
+  .n0-seg{display:inline-flex;gap:4px;padding:3px;border-radius:12px;background:var(--panel);border:1px solid var(--line);direction:ltr}
+  .n0-seg button{min-width:40px;height:34px;border:0;border-radius:9px;background:transparent;color:var(--mute);font:700 15px 'Vazirmatn';cursor:pointer}
+  .n0-seg button.on{background:linear-gradient(135deg,var(--v),var(--c));color:var(--ink)}
+  .n0-res{padding:12px 14px;border-radius:12px;margin-top:8px;line-height:2}
+  .n0-res.ok{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.4)}
+  .n0-res.no{background:rgba(251,113,133,.08);border:1px solid rgba(251,113,133,.4)}
+  .n0-res code,.n0-t code{direction:ltr;unicode-bidi:isolate;background:rgba(var(--wc),.08);padding:0 6px;border-radius:6px;color:var(--ink)}
+  .n0-t{margin-top:10px}
+  .pl-range{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pl-hint{font-size:12.5px;padding:10px 14px;border-radius:12px;background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.28);margin-top:10px}
+  .pl-help{font-size:12px;color:var(--mute);margin-top:6px;line-height:1.9}
+  .pl-help code{direction:ltr;unicode-bidi:isolate;background:rgba(var(--wc),.08);padding:0 6px;border-radius:6px;color:var(--c)}
+
+.cx-foot{text-align:center;color:var(--mute);font-size:12.5px;margin-top:8px}
+/* inputs */
+.cx-in,.cx-sel{width:100%;background:rgba(var(--wc),.06);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:9px 13px;font:500 14px 'Vazirmatn',Tahoma,sans-serif;outline:none;transition:.15s}
+.cx-in:focus,.cx-sel:focus{border-color:var(--v);box-shadow:0 0 0 3px rgba(139,92,246,.25)}
+.cx-in.ltr{direction:ltr;text-align:left;font-family:'JetBrains Mono',Consolas,monospace}
+</style>
+</head>
+<body class="cx">
+
+<div class="cx-wrap wide">
+
+  <div class="cx-hero">
+    <h1>📈 نمودار رشد توابع</h1>
+    <p>یک یا چند تابع را در بازه‌ی دلخواه رسم کن، مقیاس لگاریتمی بگذار و رشدشان را مقایسه کن. «حالت n₀» نشان می‌دهد از چه نقطه‌ای به بعد شرط تعریف O، Ω، Θ، o و ω برقرار می‌شود.</p>
+  </div>
+
+  <div class="pl-grid">
+    <aside class="cx-card" style="margin-bottom:0">
+      <h3 style="font-size:16px">⚡ توابع آماده</h3>
+      <div class="pl-presets" id="presets"></div>
+
+      <label class="cx-label">توابع (متغیر: <b dir="ltr">n</b>)</label>
+      <div id="fnlist"></div>
+      <button class="cx-btn sm block" id="addfn">＋ افزودن تابع</button>
+      <div class="pl-help">
+        مثال‌ها: <code>n^2</code> <code>n*log(n)</code> <code>2^n</code> <code>n!</code> <code>sqrt(n)</code> <code>log2(n)^2</code><br>
+        <code>log</code> در این‌جا در مبنای ۲ است؛ <code>ln</code> طبیعی و <code>log10</code> مبنای ۱۰. ضرب ضمنی هم کار می‌کند: <code>3n^2</code> و <code>n log n</code>.
+      </div>
+
+      <label class="cx-label">بازه‌ی n</label>
+      <div class="pl-range"><input class="cx-in ltr" id="a" type="number" step="any" value="1"><input class="cx-in ltr" id="b" type="number" step="any" value="20"></div>
+      <div class="pl-bar" style="margin-top:8px" id="ranges"></div>
+
+      <label class="cx-label">مقیاس و حالت</label>
+      <div class="pl-bar" style="margin-top:0">
+        <label class="cx-check"><input type="checkbox" id="lx"> محور n لگاریتمی</label>
+        <label class="cx-check"><input type="checkbox" id="ly"> محور y لگاریتمی</label>
+        <label class="cx-check"><input type="checkbox" id="disc"> فقط n صحیح</label>
+      </div>
+      <div class="pl-bar"><div class="pl-seg" id="mode"><button data-m="values" class="on">مقدار توابع</button><button data-m="n0">نقطه‌ی n₀ (تعریف)</button></div></div>
+      <div id="n0wrap" style="display:none" class="n0-box">
+        <div class="cx-hint" style="margin-bottom:6px">🎯 ببین از چه n₀ به بعد شرط تعریف برقرار می‌شود</div>
+        <label class="cx-label" style="margin-top:4px">تابع f(n)</label><select class="cx-sel" id="n0f"></select>
+        <label class="cx-label">تابع g(n)</label><select class="cx-sel" id="n0g"></select>
+        <label class="cx-label">رابطه</label><div class="n0-seg" id="n0nt"><button data-k="O">O</button><button data-k="Ω">Ω</button><button data-k="Θ">Θ</button><button data-k="o">o</button><button data-k="ω">ω</button></div>
+        <div class="cx-hint" id="n0def" style="margin-top:6px;direction:ltr;text-align:left"></div>
+        <label class="cx-label"><span id="n0clabel">c</span></label>
+        <div class="cx-row" style="gap:8px;flex-wrap:nowrap"><input class="cx-in ltr" id="n0c" type="number" step="any" min="0" style="width:96px"><input type="range" id="n0cs" min="-3" max="3" step="0.01" style="flex:1;accent-color:#8b5cf6"></div>
+        <div id="n0c2wrap" style="display:none"><label class="cx-label">c₂ (کران بالا)</label><input class="cx-in ltr" id="n0c2" type="number" step="any" min="0" style="width:96px"></div>
+      </div>
+
+      <label class="cx-label">سقف محور y (اختیاری)</label>
+      <input class="cx-in ltr" id="ymax" type="number" step="any" placeholder="خودکار">
+    </aside>
+
+    <main>
+      <div class="cx-card" style="padding:14px">
+        <div class="pl-canvas-wrap" id="cvw"><canvas id="cv"></canvas><div class="pl-tip" id="tip"></div></div>
+        <div class="pl-bar">
+          <button class="cx-btn sm" id="pngbtn" style="display:none">⬇ ذخیره‌ی تصویر</button>
+          <button class="cx-btn sm" id="share">🔗 کپی لینک این نمودار</button>
+          <button class="cx-btn sm" id="reset">↺ بازنشانی بازه</button>
+          <input class="cx-in ltr" id="sharebox" readonly style="display:none;max-width:420px"><span class="cx-hint">🖱 چرخ ماوس = زوم، کشیدن = جابه‌جایی، دابل‌کلیک = بازنشانی</span>
+        </div>
+        <div class="pl-hint" id="hints" style="display:none"></div>
+      </div>
+      <div class="cx-card" id="crosscard" style="display:none"><h3 style="font-size:16px">✦ نقاط تقاطع</h3><div id="cross"></div></div>
+      <div class="cx-card">
+        <h3 style="font-size:16px">▦ مقدار توابع در nهای دلخواه</h3>
+        <input class="cx-in ltr" id="nvals" value="10, 100, 1000, 1000000" style="max-width:380px">
+        <div style="overflow-x:auto;margin-top:10px"><table class="pl-t" id="vtab"></table></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="cx-wrap wide" style="padding-top:0"><div class="cx-foot">ابزار آموزشی درس ساختمان داده — رسم و مقایسه‌ی رشد توابع</div></div>
+<script>
+
+(function(){
+const $=id=>document.getElementById(id);
+function el(tag,cls,txt){ const e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
+let toastT=null;
+const CX={toast(msg,kind){ let t=document.querySelector('.cx-toast'); if(!t){ t=el('div','cx-toast'); document.body.appendChild(t); } t.textContent=msg; t.className='cx-toast '+(kind||'')+' show'; clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }};
+function thc(){ const cs=getComputedStyle(document.documentElement), g=n=>cs.getPropertyValue(n).trim(); return {grid:g('--cgrid'),axis:g('--caxis'),text:g('--ctext'),bg:g('--cbg'),ink:g('--ink'),guide:g('--cguide')}; }
+const COLORS=['#06b6d4','#8b5cf6','#10b981','#f59e0b','#ec4899','#f43f5e','#3b82f6','#f97316'];
+
+/* ================= پارسر امن عبارت ================= */
+function lgamma(x){ const g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(x<0.5) return Math.log(Math.PI/Math.abs(Math.sin(Math.PI*x)))-lgamma(1-x); x-=1; let a=c[0]; const t=x+g+0.5; for(let i=1;i<g+2;i++) a+=c[i]/(x+i); return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a); }
+function fact(x){ if(!isFinite(x)) return x>0?Infinity:NaN; if(x<0) return NaN; if(x===Math.floor(x)&&x<=20){let r=1;for(let i=2;i<=x;i++)r*=i;return r;} if(x>170.62) return Infinity; return Math.exp(lgamma(x+1)); }
+const FN1={log:Math.log2,lg:Math.log2,log2:Math.log2,log10:Math.log10,ln:Math.log,sqrt:Math.sqrt,cbrt:Math.cbrt,exp:Math.exp,floor:Math.floor,ceil:Math.ceil,abs:Math.abs,fact:fact};
+const FN2={min:Math.min,max:Math.max,pow:Math.pow};
+function tokenize(src){
+  src=String(src).replace(/\*\*/g,'^').replace(/[×·]/g,'*').replace(/√/g,'sqrt').replace(/²/g,'^2').replace(/³/g,'^3').replace(/π/g,'pi').replace(/\u2212/g,'-');
+  const t=[]; let i=0;
+  while(i<src.length){ const ch=src[i];
+    if(/\s/.test(ch)){i++;continue;}
+    let m;
+    if((m=/^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?/i.exec(src.slice(i)))){ t.push({k:'num',v:parseFloat(m[0])}); i+=m[0].length; continue; }
+    if((m=/^[a-zA-Z_][a-zA-Z_0-9]*/.exec(src.slice(i)))){ t.push({k:'id',v:m[0].toLowerCase()}); i+=m[0].length; continue; }
+    if('+-*/^()!,'.indexOf(ch)>=0){ t.push({k:'op',v:ch}); i++; continue; }
+    throw new Error('نویسه‌ی نامعتبر «'+ch+'»');
+  }
+  return t;
+}
+function parse(src){
+  const t=tokenize(src); let p=0; const peek=()=>t[p], next=()=>t[p++];
+  if(!t.length) throw new Error('عبارت خالی است');
+  const isOp=(tk,v)=>tk&&tk.k==='op'&&tk.v===v;
+  const startsFactor=tk=>tk&&(tk.k==='num'||tk.k==='id'||isOp(tk,'('));
+  function expr(){ let l=term(); while(isOp(peek(),'+')||isOp(peek(),'-')){ const op=next().v; l={t:'bin',op,l,r:term()}; } return l; }
+  function term(){ let l=unary(); for(;;){ const tk=peek(); if(!tk) break;
+      if(isOp(tk,'*')||isOp(tk,'/')){ next(); l={t:'bin',op:tk.v,l,r:unary()}; }
+      else if(startsFactor(tk)){ l={t:'bin',op:'*',l,r:unary()}; } else break; } return l; }
+  function unary(){ const tk=peek(); if(isOp(tk,'-')){next(); return {t:'neg',e:unary()};} if(isOp(tk,'+')){next(); return unary();} return power(); }
+  function power(){ const b=postfix(); if(isOp(peek(),'^')){ next(); return {t:'bin',op:'^',l:b,r:unary()}; } return b; }
+  function postfix(){ let e=primary(); while(isOp(peek(),'!')){ next(); e={t:'fact',e}; } return e; }
+  function primary(){
+    const tk=next(); if(!tk) throw new Error('عبارت ناقص است');
+    if(tk.k==='num') return {t:'num',v:tk.v};
+    if(isOp(tk,'(')){ const e=expr(); if(!isOp(next(),')')) throw new Error('پرانتز بسته نشده'); return e; }
+    if(tk.k==='id'){
+      if(tk.v==='n'||tk.v==='x') return {t:'var'};
+      if(tk.v==='e') return {t:'num',v:Math.E}; if(tk.v==='pi') return {t:'num',v:Math.PI}; if(tk.v==='inf') return {t:'num',v:Infinity};
+      if(FN1[tk.v]||FN2[tk.v]){
+        const two=!!FN2[tk.v]; let args=[];
+        if(isOp(peek(),'(')){ next(); args.push(expr()); while(isOp(peek(),',')){ next(); args.push(expr()); } if(!isOp(next(),')')) throw new Error('پرانتز بسته نشده'); }
+        else { if(two) throw new Error('تابع '+tk.v+' به پرانتز نیاز دارد'); args=[power()]; }
+        if(two&&args.length!==2) throw new Error(tk.v+' دو ورودی می‌خواهد'); if(!two&&args.length!==1) throw new Error(tk.v+' یک ورودی می‌خواهد');
+        return {t:'call',name:tk.v,args};
+      }
+      throw new Error('«'+tk.v+'» شناخته‌شده نیست');
+    }
+    throw new Error('ساختار نامعتبر');
+  }
+  const ast=expr(); if(p<t.length) throw new Error('پایان عبارت نامعتبر است'); return ast;
+}
+function compile(a){
+  switch(a.t){
+    case 'num': { const v=a.v; return ()=>v; }
+    case 'var': return n=>n;
+    case 'neg': { const f=compile(a.e); return n=>-f(n); }
+    case 'fact': { const f=compile(a.e); return n=>fact(f(n)); }
+    case 'bin': { const l=compile(a.l), r=compile(a.r);
+      switch(a.op){ case '+': return n=>l(n)+r(n); case '-': return n=>l(n)-r(n); case '*': return n=>l(n)*r(n); case '/': return n=>l(n)/r(n); default: return n=>Math.pow(l(n),r(n)); } }
+    case 'call': { const fs=a.args.map(compile); if(FN2[a.name]){ const g=FN2[a.name]; return n=>g(fs[0](n),fs[1](n)); } const g=FN1[a.name]; return n=>g(fs[0](n)); }
+  }
+}
+function build(src){ return compile(parse(src)); }
+
+/* ================= وضعیت ================= */
+const PRESETS=[['1','1'],['log n','log(n)'],['√n','sqrt(n)'],['n','n'],['n log n','n*log(n)'],['n²','n^2'],['n³','n^3'],['2ⁿ','2^n'],['n!','n!'],['nⁿ','n^n'],['log log n','log(log(n))']];
+const RANGES=[[1,10],[1,20],[1,100],[1,1000],[10,1000000]];
+const S={fns:[],a:1,b:20,lx:false,ly:false,disc:false,mode:'values',ymax:null,n0:{f:0,g:1,nt:'O',c:1,c2:2}};
+let nextColor=0; const DEF={a:1,b:20};
+function addFn(expr,silent){ S.fns.push({expr:expr||'',color:COLORS[nextColor++%COLORS.length],on:true,fn:null,err:null}); compileFn(S.fns[S.fns.length-1]); if(!silent) refresh(true); }
+function compileFn(f){ try{ f.fn=build(f.expr); f.err=null; }catch(e){ f.fn=null; f.err=f.expr.trim()?e.message:'عبارت را وارد کن'; } }
+
+/* ----- URL ----- */
+function readURL(){
+  const u=new URLSearchParams(location.search); const f=u.get('f');
+  if(f){ f.split(';').map(s=>s.trim()).filter(Boolean).slice(0,8).forEach(x=>addFn(x,true)); }
+  if(u.get('a')) S.a=parseFloat(u.get('a')); if(u.get('b')) S.b=parseFloat(u.get('b'));
+  S.lx=u.get('lx')==='1'; S.ly=u.get('ly')==='1'; S.disc=u.get('d')==='1'; if(u.get('m')==='n0') S.mode='n0'; if(u.get('nf')) S.n0.f=Math.max(0,parseInt(u.get('nf'))||0); if(u.get('ng')) S.n0.g=Math.max(0,parseInt(u.get('ng'))||0); if(['O','Ω','Θ','o','ω'].includes(u.get('nt'))) S.n0.nt=u.get('nt'); if(parseFloat(u.get('c'))>0) S.n0.c=parseFloat(u.get('c')); if(parseFloat(u.get('c2'))>0) S.n0.c2=parseFloat(u.get('c2'));
+  if(u.get('ym')) S.ymax=parseFloat(u.get('ym'));
+  if(!isFinite(S.a)||!isFinite(S.b)||S.a>=S.b){S.a=1;S.b=20;}
+  DEF.a=S.a; DEF.b=S.b;
+  if(!S.fns.length) ['log(n)','n','n*log(n)','n^2','2^n'].forEach(x=>addFn(x,true));
+}
+function writeURL(){
+  const u=new URLSearchParams(); u.set('f',S.fns.map(f=>f.expr).join(';')); u.set('a',+S.a.toPrecision(8)); u.set('b',+S.b.toPrecision(8));
+  if(S.lx) u.set('lx','1'); if(S.ly) u.set('ly','1'); if(S.disc) u.set('d','1'); if(S.mode==='n0'){u.set('m','n0');u.set('nf',S.n0.f);u.set('ng',S.n0.g);u.set('nt',S.n0.nt);u.set('c',S.n0.c);if(S.n0.nt==='Θ') u.set('c2',S.n0.c2);} if(S.ymax) u.set('ym',S.ymax);
+  try{ history.replaceState(null,'','?'+u.toString()); }catch(e){}
+}
+
+/* ================= رابط ================= */
+function buildPresets(){
+  const box=$('presets'); box.textContent='';
+  PRESETS.forEach(([tx,ex])=>{ const b=el('button'); b.textContent=tx; b.dataset.e=ex; b.onclick=()=>{ const i=S.fns.findIndex(f=>f.expr.replace(/\s/g,'')===ex.replace(/\s/g,'')); if(i>=0){ S.fns.splice(i,1); } else addFn(ex,true); refresh(true); }; box.appendChild(b); });
+}
+function paintPresets(){ [...$('presets').children].forEach(b=>b.classList.toggle('on',S.fns.some(f=>f.expr.replace(/\s/g,'')===b.dataset.e.replace(/\s/g,'')))); }
+function buildFnList(){
+  const box=$('fnlist'); box.textContent='';
+  S.fns.forEach((f,i)=>{
+    const row=el('div','pl-fn'); const dot=el('span','pl-dot'+(f.on?'':' off')); dot.style.background=f.color; dot.title='نمایش/مخفی';
+    dot.onclick=()=>{ f.on=!f.on; dot.classList.toggle('off',!f.on); render(); };
+    const inp=el('input','cx-in ltr'+(f.err&&f.expr.trim()?' bad':'')); inp.value=f.expr; inp.placeholder='مثلاً n*log(n)'; inp.spellcheck=false;
+    const del=el('button','cx-icon-btn del'); del.innerHTML='✕'; del.onclick=()=>{ S.fns.splice(i,1); refresh(true); };
+    row.append(dot,inp,del); box.appendChild(row);
+    const err=el('div','pl-err',f.err||''); err.style.display=f.err&&f.expr.trim()?'':'none'; box.appendChild(err);
+    inp.oninput=()=>{ f.expr=inp.value; compileFn(f); inp.classList.toggle('bad',!!(f.err&&f.expr.trim())); err.textContent=f.err||''; err.style.display=f.err&&f.expr.trim()?'':'none'; paintPresets(); fillRef(); render(); writeURL(); };
+  });
+}
+function fillRef(){ fillN0(); }
+function fillN0(){ const n=S.fns.length; if(S.n0.f>=n) S.n0.f=0; if(S.n0.g>=n) S.n0.g=Math.min(1,n-1); if(n>1&&S.n0.f===S.n0.g) S.n0.g=(S.n0.f+1)%n;
+  ['n0f','n0g'].forEach(id=>{ const sel=$(id); sel.textContent=''; S.fns.forEach((f,i)=>{ const o=el('option',null,f.expr||('تابع '+(i+1))); o.value=i; sel.appendChild(o); }); });
+  $('n0f').value=S.n0.f; $('n0g').value=S.n0.g; }
+const NDEF={O:'f(n) ≤ c·g(n)',Ω:'f(n) ≥ c·g(n)',Θ:'c₁·g(n) ≤ f(n) ≤ c₂·g(n)',o:'f(n) < c·g(n)   (برای هر c>0)',ω:'f(n) > c·g(n)   (برای هر c>0)'};
+function paintN0(){ [...$('n0nt').children].forEach(b=>b.classList.toggle('on',b.dataset.k===S.n0.nt)); $('n0def').textContent=NDEF[S.n0.nt]+'   ∀ n ≥ n₀';
+  const th=S.n0.nt==='Θ'; $('n0c2wrap').style.display=th?'':'none'; $('n0clabel').textContent=th?'c₁ (کران پایین)':(S.n0.nt==='o'||S.n0.nt==='ω'?'c  (یک نمونه از «هر c»)':'c');
+  if(document.activeElement!==$('n0c')) $('n0c').value=+S.n0.c.toPrecision(6); if(document.activeElement!==$('n0c2')) $('n0c2').value=+S.n0.c2.toPrecision(6);
+  $('n0cs').value=Math.max(-3,Math.min(3,Math.log10(S.n0.c))); }
+function n0Changed(){ paintN0(); render(); writeURL(); }
+$('n0f').onchange=()=>{ S.n0.f=+$('n0f').value; n0Changed(); };
+$('n0g').onchange=()=>{ S.n0.g=+$('n0g').value; n0Changed(); };
+[...$('n0nt').children].forEach(b=>b.onclick=()=>{ S.n0.nt=b.dataset.k; if(S.n0.nt==='o'&&S.n0.c>1) S.n0.c=0.5; if(S.n0.nt==='Θ'&&S.n0.c>=S.n0.c2){S.n0.c=0.5;S.n0.c2=2;} n0Changed(); });
+$('n0c').oninput=()=>{ const v=parseFloat($('n0c').value); if(v>0){ S.n0.c=v; paintN0(); render(); writeURL(); } };
+$('n0c2').oninput=()=>{ const v=parseFloat($('n0c2').value); if(v>0){ S.n0.c2=v; render(); writeURL(); } };
+$('n0cs').oninput=()=>{ S.n0.c=Math.pow(10,parseFloat($('n0cs').value)); S.n0.c=+S.n0.c.toPrecision(3); paintN0(); render(); writeURL(); };
+function refresh(rebuild){ if(rebuild){ buildFnList(); fillRef(); } paintPresets(); render(); writeURL(); }
+function syncInputs(){ $('a').value=+S.a.toPrecision(7); $('b').value=+S.b.toPrecision(7); }
+RANGES.forEach(r=>{ const b=el('button','cx-btn sm',r[0]+' – '+(r[1]>=1e6?'10⁶':r[1])); b.onclick=()=>{ S.a=r[0]; S.b=r[1]; syncInputs(); render(); writeURL(); }; $('ranges').appendChild(b); });
+$('a').oninput=$('b').oninput=function(){ const a=parseFloat($('a').value), b=parseFloat($('b').value); if(isFinite(a)&&isFinite(b)&&a<b){ S.a=a; S.b=b; render(); writeURL(); } };
+$('lx').onchange=()=>{ S.lx=$('lx').checked; if(S.lx&&S.a<=0){S.a=Math.max(S.a,0.1);syncInputs();} render(); writeURL(); };
+$('ly').onchange=()=>{ S.ly=$('ly').checked; render(); writeURL(); };
+$('disc').onchange=()=>{ S.disc=$('disc').checked; render(); writeURL(); };
+$('ymax').oninput=()=>{ const v=parseFloat($('ymax').value); S.ymax=isFinite(v)&&v>0?v:null; render(); writeURL(); };
+$('addfn').onclick=()=>{ addFn('',false); const ins=$('fnlist').querySelectorAll('input'); if(ins.length) ins[ins.length-1].focus(); };
+[...$('mode').children].forEach(b=>b.onclick=()=>{ S.mode=b.dataset.m; [...$('mode').children].forEach(x=>x.classList.toggle('on',x===b)); $('n0wrap').style.display=S.mode==='n0'?'':'none'; if(S.mode==='n0'){ fillN0(); paintN0(); if(S.fns.length<2){ CX.toast('برای این حالت حداقل دو تابع لازم است','err'); } } render(); writeURL(); });
+$('reset').onclick=()=>{ S.a=DEF.a; S.b=DEF.b; syncInputs(); render(); writeURL(); };
+$('nvals').oninput=()=>renderTable();
+$('share').onclick=async()=>{ writeURL(); const u=location.origin+location.pathname+location.search; try{ await navigator.clipboard.writeText(u); CX.toast('لینک کپی شد ✓','ok'); }catch(e){ const b=$('sharebox'); b.style.display=''; b.value=u; b.select(); } };
+(async()=>{ try{ const dl=await claude.use('downloads'); if(!dl) return; const b=$('pngbtn'); b.style.display=''; b.onclick=()=>{ $('cv').toBlob(async blob=>{ try{ await dl.save({filename:'growth-chart.png',data:blob}); }catch(e){ if(e&&e.code!=='declined') CX.toast('ذخیره ممکن نشد','err'); } },'image/png'); }; }catch(e){} })();
+
+/* ================= محاسبه ================= */
+function fmt(v){ if(v===Infinity) return '∞'; if(v===-Infinity) return '-∞'; if(!isFinite(v)) return '—'; const av=Math.abs(v); if(av!==0&&(av>=1e6||av<1e-3)) return v.toExponential(2); return String(parseFloat(v.toPrecision(5))); }
+function value(f,x){ return f.fn(x); }
+function sampleXs(){
+  const N=720, xs=[];
+  if(S.disc){ const lo=Math.max(1,Math.ceil(S.a)), hi=Math.floor(S.b); const cnt=hi-lo+1; if(cnt>=1&&cnt<=2000){ for(let i=lo;i<=hi;i++) xs.push(i); return xs; } }
+  if(S.lx){ const la=Math.log(Math.max(S.a,1e-9)), lb=Math.log(S.b); for(let i=0;i<=N;i++) xs.push(Math.exp(la+(lb-la)*i/N)); }
+  else for(let i=0;i<=N;i++) xs.push(S.a+(S.b-S.a)*i/N);
+  return xs;
+}
+function niceStep(range,target){ const raw=range/target, mag=Math.pow(10,Math.floor(Math.log10(raw))), r=raw/mag; return (r<1.5?1:r<3?2:r<7?5:10)*mag; }
+let LAST=null;
+
+function fmtC(c){ return String(+c.toPrecision(4)); }
+// اولین n₀ که از آن به بعد pred در تمام بازه برقرار می‌ماند (نمونه‌های غیرمتناهی نادیده گرفته می‌شوند)
+function findN0(xs,vals,pred){
+  const v=[]; xs.forEach(x=>{ let fg=null; try{ fg=vals(x); }catch(e){} if(fg&&isFinite(fg[0])&&isFinite(fg[1])) v.push(x); });
+  if(v.length<2) return {ok:false,reason:'overflow'};
+  const trunc=v.length<xs.length&&v[v.length-1]!==xs[xs.length-1]; const test=x=>{ try{ const fg=vals(x); return isFinite(fg[0])&&isFinite(fg[1])&&pred(fg[0],fg[1])===true; }catch(e){ return false; } };
+  let lastBad=-1; for(let k=0;k<v.length;k++){ if(!test(v[k])) lastBad=k; }
+  if(lastBad===v.length-1) return {ok:false,reason:'none',trunc};
+  if(lastBad<0) return {ok:true,n0:v[0],full:true,trunc,last:v[v.length-1]};
+  let a=v[lastBad], b=v[lastBad+1];
+  if(!S.disc){ for(let i=0;i<45;i++){ const m=(a+b)/2; if(test(m)) b=m; else a=m; } }
+  let ni=S.disc?b:Math.ceil(b-1e-9); for(let t=0;t<4&&!test(ni);t++) ni++;
+  return {ok:true,n0:b,n0int:ni,full:false,trunc,last:v[v.length-1]};
+}
+function n0Pred(nt,c1,c2){ switch(nt){ case 'O': return (f,g)=>f<=c1*g; case 'Ω': return (f,g)=>f>=c1*g; case 'Θ': return (f,g)=>f>=c1*g&&f<=c2*g; case 'o': return (f,g)=>f<c1*g; default: return (f,g)=>f>c1*g; } }
+function computeN0(){
+  const F=S.fns[S.n0.f],G=S.fns[S.n0.g]; const xs=sampleXs(); const out={xs,series:[],refFn:null,n0:null};
+  if(!F||!G||!F.fn||!G.fn||F===G) return out; const nt=S.n0.nt,c1=S.n0.c,c2=S.n0.c2;
+  const safe=fn=>x=>{ try{ return fn(x); }catch(e){ return NaN; } };
+  const mk=(expr,color,fn)=>({f:{expr,color,fn,dash:true,on:true},i:-1,ys:xs.map(safe(fn))});
+  out.series.push({f:F,i:S.n0.f,ys:xs.map(safe(F.fn))});
+  out.series.push(mk(fmtC(c1)+'·g(n)','#64748b',x=>c1*G.fn(x)));
+  if(nt==='Θ') out.series.push(mk(fmtC(c2)+'·g(n)','#fbbf24',x=>c2*G.fn(x)));
+  out.F=F; out.G=G; out.vals=x=>[F.fn(x),G.fn(x)];
+  out.n0=findN0(xs,out.vals,n0Pred(nt,c1,c2));
+  return out;
+}
+function compute(){
+  if(S.mode==='n0') return computeN0();
+  const refFn=null;
+  const xs=sampleXs(); const series=[];
+  S.fns.forEach((f,i)=>{ if(!f.on||!f.fn) return;
+    const ys=xs.map(x=>{ try{ return value(f,x,refFn); }catch(e){ return NaN; } }); series.push({f,i,ys}); });
+  return {xs,series,refFn};
+}
+function yRange(c){
+  const fin=[]; const maxima=[]; let lo=Infinity,hi=-Infinity;
+  c.series.forEach(s=>{ let m=-Infinity; s.ys.forEach(y=>{ if(isFinite(y)){ fin.push(y); if(y>m)m=y; if(y<lo)lo=y; if(y>hi)hi=y; } }); if(isFinite(m)) maxima.push(m); });
+  if(!fin.length) return {lo:0,hi:1};
+  if(S.ly){ const pos=fin.filter(v=>v>0); if(!pos.length) return {lo:0.1,hi:10}; let l=Math.min(...pos), h=Math.max(...pos);
+    l=Math.pow(10,Math.floor(Math.log10(l))); h=Math.pow(10,Math.ceil(Math.log10(h))); if(S.ymax) h=Math.pow(10,Math.ceil(Math.log10(S.ymax))); if(h/l<10) h=l*10; if(l<1e-12)l=1e-12; if(h>1e300)h=1e300; return {lo:l,hi:h}; }
+  maxima.sort((a,b)=>a-b); let h=maxima[Math.floor(maxima.length/2)]*1.1; if(S.ymax) h=S.ymax; if(!(h>0)) h=1;
+  let l=lo<0?lo*1.1:0; return {lo:l,hi:h};
+}
+
+/* ================= رسم ================= */
+const cv=$('cv'), ctx=cv.getContext('2d'); let geom=null;
+function render(){
+  const wrap=$('cvw'), W=Math.max(300,wrap.clientWidth), H=Math.max(380,Math.min(580,Math.round(W*0.58))), dpr=window.devicePixelRatio||1;
+  cv.style.width=W+'px'; cv.style.height=H+'px'; cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  const M={l:66,r:20,t:18,b:44}; const pw=W-M.l-M.r, ph=H-M.t-M.b;
+  const c=compute(); LAST=c; const yr=yRange(c);
+  const tx=x=>S.lx?Math.log10(x):x, ty=y=>S.ly?Math.log10(y):y;
+  const X0=tx(Math.max(S.a,S.lx?1e-9:-Infinity)), X1=tx(S.b), Y0=ty(Math.max(yr.lo,S.ly?1e-300:-Infinity)), Y1=ty(yr.hi);
+  const px=x=>M.l+(tx(x)-X0)/(X1-X0)*pw, py=y=>M.t+ph-(ty(y)-Y0)/(Y1-Y0)*ph;
+  geom={M,pw,ph,W,H,px,py,X0,X1,Y0,Y1,tx,ty};
+  const TH=thc(); ctx.clearRect(0,0,W,H); ctx.font="12px Vazirmatn, Tahoma, sans-serif"; ctx.textBaseline='middle';
+
+  // شبکه و برچسب
+  ctx.strokeStyle=TH.grid; ctx.fillStyle=TH.text; ctx.lineWidth=1;
+  ctx.textAlign='right';
+  const yt=[]; if(S.ly){ for(let e=Math.ceil(Y0);e<=Math.floor(Y1);e+=Math.max(1,Math.ceil((Y1-Y0)/8))) yt.push(Math.pow(10,e)); } else { const st=niceStep(yr.hi-yr.lo,6); for(let v=Math.ceil(yr.lo/st)*st;v<=yr.hi+1e-9;v+=st) yt.push(v); }
+  yt.forEach(v=>{ const y=py(v); if(y<M.t-1||y>M.t+ph+1) return; ctx.beginPath(); ctx.moveTo(M.l,y); ctx.lineTo(M.l+pw,y); ctx.stroke(); ctx.fillText(S.ly&&v>=1&&v<1e5?String(v):fmt(v),M.l-8,y); });
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  const xt=[]; if(S.lx){ for(let e=Math.ceil(X0);e<=Math.floor(X1);e+=Math.max(1,Math.ceil((X1-X0)/8))) xt.push(Math.pow(10,e)); if(xt.length<2){ xt.length=0; const st=niceStep(S.b-S.a,6); for(let v=Math.ceil(S.a/st)*st;v<=S.b;v+=st) xt.push(v);} } else { const st=niceStep(S.b-S.a,8); for(let v=Math.ceil(S.a/st)*st;v<=S.b+1e-9;v+=st) xt.push(v); }
+  xt.forEach(v=>{ const x=px(v); if(x<M.l-1||x>M.l+pw+1) return; ctx.beginPath(); ctx.moveTo(x,M.t); ctx.lineTo(x,M.t+ph); ctx.stroke(); ctx.fillText(fmt(v),x,M.t+ph+8); });
+  ctx.strokeStyle=TH.axis; ctx.beginPath(); ctx.moveTo(M.l,M.t); ctx.lineTo(M.l,M.t+ph); ctx.lineTo(M.l+pw,M.t+ph); ctx.stroke();
+  ctx.fillStyle=TH.text; ctx.textAlign='left'; ctx.textBaseline='alphabetic'; ctx.fillText('f(n)',M.l+6,M.t+12); ctx.textAlign='right'; ctx.fillText('n',M.l+pw,M.t+ph-6);
+
+  ctx.save(); ctx.beginPath(); ctx.rect(M.l,M.t,pw,ph); ctx.clip();
+  if(S.mode==='n0') drawN0Under(c,px,py,M,pw,ph);
+  c.series.forEach(s=>{
+    ctx.strokeStyle=s.f.color; ctx.lineWidth=s.f.dash?2:2.4; ctx.lineJoin='round'; ctx.shadowColor=s.f.color; ctx.shadowBlur=s.f.dash?0:8; ctx.setLineDash(s.f.dash?[9,6]:[]); ctx.beginPath(); let pen=false;
+    for(let k=0;k<c.xs.length;k++){ let y=s.ys[k]; if(y===Infinity) y=1e300; if(!isFinite(y)||(S.ly&&y<=0)){pen=false;continue;} const X=px(c.xs[k]); const Y=Math.max(-5000,Math.min(5000,py(y))); if(!pen){ctx.moveTo(X,Y);pen=true;} else ctx.lineTo(X,Y); }
+    ctx.stroke(); ctx.shadowBlur=0; ctx.setLineDash([]);
+    if(S.disc&&c.xs.length<=80&&!s.f.dash){ ctx.fillStyle=s.f.color; c.xs.forEach((x,k)=>{ const y=s.ys[k]; if(!isFinite(y)||(S.ly&&y<=0)) return; ctx.beginPath(); ctx.arc(px(x),py(y),3.2,0,7); ctx.fill(); }); }
+  });
+  // نقاط تقاطع
+  const crosses=(S.mode==='values'||S.mode==='n0')?findCrossings(c):[]; crosses.slice(0,14).forEach(q=>{ const X=px(q.x),Y=py(q.y); if(!isFinite(Y)) return; ctx.strokeStyle=TH.ink; ctx.lineWidth=2; ctx.fillStyle=TH.bg; ctx.beginPath(); ctx.arc(X,Y,5,0,7); ctx.fill(); ctx.stroke(); });
+  if(S.mode==='n0') drawN0Over(c,px,M,pw,ph);
+  ctx.restore();
+  renderCross(crosses); renderHints(c); renderTable();
+  hideTip();
+}
+function drawN0Under(c,px,py,M,pw,ph){
+  if(S.n0.nt==='Θ'&&c.series.length===3){ const A=c.series[1].ys,B=c.series[2].ys; ctx.fillStyle='rgba(251,191,36,.07)'; ctx.beginPath(); let started=false, last=-1;
+    for(let k=0;k<c.xs.length;k++){ const y=A[k]; if(!isFinite(y)||(S.ly&&y<=0)) continue; const X=px(c.xs[k]),Y=Math.max(-5000,Math.min(5000,py(y))); if(!started){ctx.moveTo(X,Y);started=true;} else ctx.lineTo(X,Y); last=k; }
+    if(started){ for(let k=c.xs.length-1;k>=0;k--){ let y=B[k]; if(y===Infinity) y=1e300; if(!isFinite(y)||(S.ly&&y<=0)) continue; ctx.lineTo(px(c.xs[k]),Math.max(-5000,Math.min(5000,py(y)))); } ctx.closePath(); ctx.fill(); } }
+  const r=c.n0; if(r&&r.ok){ const X=Math.max(M.l,px(r.n0)); ctx.fillStyle='rgba(52,211,153,.09)'; ctx.fillRect(X,M.t,M.l+pw-X,ph); }
+}
+function drawN0Over(c,px,M,pw,ph){
+  const r=c.n0; if(!r||!r.ok) return; const X=px(r.n0); if(X<M.l-1||X>M.l+pw+1) { return; }
+  ctx.strokeStyle='#10b981'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(X,M.t); ctx.lineTo(X,M.t+ph); ctx.stroke();
+  const label='n₀ ≈ '+fmt(r.full?r.n0:(r.n0int||r.n0)); ctx.font="700 13px Vazirmatn, Tahoma, sans-serif"; ctx.textBaseline='alphabetic'; const w=ctx.measureText(label).width+14; const right=X+w+8>M.l+pw; const bx=right?X-w-6:X+6;
+  ctx.fillStyle=thc().bg; ctx.strokeStyle='#10b981'; ctx.lineWidth=1; ctx.beginPath(); ctx.roundRect?ctx.roundRect(bx,M.t+8,w,24,8):ctx.rect(bx,M.t+8,w,24); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#059669'; ctx.textAlign='left'; ctx.fillText(label,bx+7,M.t+25); ctx.font="12px Vazirmatn, Tahoma, sans-serif";
+}
+function findCrossings(c){
+  const out=[]; const ser=c.series; if(ser.length<2) return out;
+  for(let i=0;i<ser.length;i++) for(let j=i+1;j<ser.length;j++){
+    let found=0;
+    for(let k=1;k<c.xs.length&&found<3;k++){
+      const d0=ser[i].ys[k-1]-ser[j].ys[k-1], d1=ser[i].ys[k]-ser[j].ys[k];
+      if(!isFinite(d0)||!isFinite(d1)||d0===0&&d1===0) continue;
+      if(d0*d1<0||(d0===0&&d1!==0)){
+        let a=c.xs[k-1], b=c.xs[k]; const fi=ser[i].f.fn, fj=ser[j].f.fn;
+        for(let it=0;it<40;it++){ const m=(a+b)/2; const dm=fi(m)-fj(m); if(!isFinite(dm)) break; if((fi(a)-fj(a))*dm<=0) b=m; else a=m; }
+        const x=(a+b)/2, y=fi(x); if(isFinite(y)&&isFinite(x)){ out.push({x,y,a:ser[i].f,b:ser[j].f}); found++; }
+      }
+    }
+  }
+  return out;
+}
+function renderCross(cr){
+  $('crosscard').style.display=cr.length?'':'none'; const box=$('cross'); box.textContent='';
+  const tb=el('table','pl-t'); tb.innerHTML='<tr><th>تابع اول</th><th>تابع دوم</th><th>n تقریبی</th><th>مقدار مشترک</th></tr>';
+  cr.slice(0,20).forEach(q=>{ const tr=el('tr'); [q.a.expr,q.b.expr,fmt(q.x),fmt(q.y)].forEach(t=>{ const td=el('td',null,t); tr.appendChild(td); }); tb.appendChild(tr); });
+  box.appendChild(tb); if(cr.length){ const n=el('div','cx-hint','بعد از آخرین نقطه‌ی تقاطع، ترتیب توابع ثابت می‌ماند (برای توابع «معمولی») — همین ایده پشت مفهوم «برای nهای به‌اندازه‌ی کافی بزرگ» در تعریف O و Ω است.'); n.style.marginTop='8px'; box.appendChild(n); }
+}
+function renderN0(c){
+  const box=$('hints'); box.style.display=''; box.textContent=''; const nt=S.n0.nt, c1=S.n0.c, c2=S.n0.c2, F=c.F, G=c.G;
+  if(S.fns.length<2||!F||!G||F===G){ box.textContent='دو تابع متفاوت و معتبر برای f و g انتخاب کن.'; return; }
+  if(nt==='Θ'&&!(c1<c2)){ box.textContent='برای Θ باید c₁ < c₂ باشد.'; return; }
+  const r=c.n0; const code=t=>{ const e=el('code',null,t); return e; };
+  const symFn={O:'≤',Ω:'≥',o:'<',ω:'>'}[nt]; const rel=nt==='Θ'?(fmtC(c1)+'·g ≤ f ≤ '+fmtC(c2)+'·g'):('f '+symFn+' '+fmtC(c1)+'·g');
+  const res=el('div','n0-res '+(r&&r.ok?'ok':'no'));
+  const l1=el('div'); l1.append(document.createTextNode('f(n) = '),code(F.expr),document.createTextNode('   ،   g(n) = '),code(G.expr)); res.appendChild(l1);
+  if(r&&r.ok){
+    const N=r.full?r.n0:r.n0int; const l2=el('div'); l2.innerHTML='<b>پیدا شد:</b> برای همه‌ی <code>n ≥ '+fmt(N)+'</code> شرط <code>'+rel+'</code> برقرار است'+(r.full?' (از همان ابتدای بازه).':'.'); res.appendChild(l2);
+    if(!r.full){ const l3=el('div','cx-muted cx-small'); l3.textContent='نقطه‌ی دقیق عبور (حقیقی) ≈ '+fmt(r.n0)+' ؛ کوچک‌ترین n صحیح = '+fmt(N); res.appendChild(l3); }
+    let fv,gv; try{ fv=F.fn(N); gv=G.fn(N); }catch(e){}
+    if(isFinite(fv)&&isFinite(gv)){ const l4=el('div','cx-muted cx-small'); l4.textContent='در n = '+fmt(N)+':  f = '+fmt(fv)+'  ،  g = '+fmt(gv)+'  ،  '+(nt==='Θ'?fmtC(c1)+'·g = '+fmt(c1*gv)+'  ،  '+fmtC(c2)+'·g = '+fmt(c2*gv):fmtC(c1)+'·g = '+fmt(c1*gv)); res.appendChild(l4); }
+    const concl=el('div'); concl.style.marginTop='4px';
+    concl.innerHTML=(nt==='o'||nt==='ω')?'<b>توجه:</b> o و ω یعنی این شرط برای <b>هر</b> c>0 برقرار باشد؛ این‌جا فقط برای یک c دیده‌ای. جدول زیر نشان می‌دهد با کوچک/بزرگ‌کردن c، n₀ چطور جابه‌جا می‌شود.':'پس با c = <code>'+(nt==='Θ'?fmtC(c1)+'، c₂ = '+fmtC(c2):fmtC(c1))+'</code> و n₀ = <code>'+fmt(N)+'</code> می‌توان نوشت f(n) = '+nt+'(g(n)) — <span class="cx-muted">اگر این روند تا بی‌نهایت ادامه یابد.</span>';
+    res.appendChild(concl);
+  } else {
+    const l2=el('div'); l2.innerHTML=(r&&r.reason==='overflow')?'<b>مقدار توابع در این بازه از دامنه‌ی اعداد قابل محاسبه بیرون می‌رود.</b> بازه را کوچک‌تر کن.':'<b>در این بازه n₀ پیدا نشد:</b> تا انتهای بازه شرط <code>'+rel+'</code> هنوز نقض می‌شود. بازه را بزرگ‌تر کن، c را عوض کن، یا شاید این رابطه اصلاً برقرار نیست.'; res.appendChild(l2);
+  }
+  if(r&&r.trunc){ const l5=el('div','cx-muted cx-small'); l5.textContent='توجه: بخش انتهایی بازه به‌خاطر سرریز عددی بررسی نشد.'; res.appendChild(l5); }
+  box.appendChild(res);
+  // جدول n₀ بر حسب c
+  if(nt!=='Θ'){
+    const cs={O:[0.5,1,2,5,10],Ω:[0.01,0.1,0.5,1,2],o:[1,0.5,0.1,0.01,0.001],ω:[1,2,10,100,1000]}[nt];
+    const t=el('div','n0-t'); t.appendChild(el('div','cx-label',(nt==='o'||nt==='ω'?'برای هر c یک n₀ متفاوت لازم است':'اثر c روی n₀')));
+    const tb=el('table','pl-t'); const h=el('tr'); h.appendChild(el('th',null,'c')); cs.forEach(v=>h.appendChild(el('th',null,String(v)))); tb.appendChild(h);
+    const row=el('tr'); row.appendChild(el('td',null,'n₀')); cs.forEach(v=>{ const q=findN0(c.xs,c.vals,n0Pred(nt,v,v)); row.appendChild(el('td',null,q.ok?fmt(q.full?q.n0:q.n0int):'در بازه نیست')); }); tb.appendChild(row);
+    const wrap=el('div'); wrap.style.overflowX='auto'; wrap.appendChild(tb); t.appendChild(wrap); box.appendChild(t);
+  }
+}
+function renderHints(c){ if(S.mode==='n0'){ renderN0(c); return; } $('hints').style.display='none'; }
+function renderTable(){
+  const ns=$('nvals').value.split(/[,\s،;]+/).map(parseFloat).filter(v=>isFinite(v)&&v>=0).slice(0,8); const tb=$('vtab'); tb.textContent='';
+  const h=el('tr'); h.appendChild(el('th',null,'f(n)')); ns.forEach(n=>h.appendChild(el('th',null,'n = '+fmt(n)))); tb.appendChild(h);
+  S.fns.forEach(f=>{ const tr=el('tr'); const th=el('td'); const d=el('span'); d.style.cssText='display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;background:'+f.color; th.append(d,document.createTextNode(f.expr||'—')); tr.appendChild(th);
+    ns.forEach(n=>{ let v=NaN; try{ v=f.fn?f.fn(n):NaN; }catch(e){} tr.appendChild(el('td',null,fmt(v))); }); tb.appendChild(tr); });
+}
+
+/* ================= تعامل: hover / zoom / pan ================= */
+const tip=$('tip');
+function hideTip(){ tip.style.display='none'; hover=null; }
+let hover=null, drag=null;
+function xFromPx(p){ const g=geom; const t=g.X0+(p-g.M.l)/g.pw*(g.X1-g.X0); return S.lx?Math.pow(10,t):t; }
+cv.addEventListener('pointermove',e=>{
+  if(!geom) return; const r=cv.getBoundingClientRect(), mx=e.clientX-r.left;
+  if(drag){ const dx=mx-drag.x; const g=geom; if(S.lx){ const sh=-dx/g.pw*(g.X1-g.X0); S.a=Math.pow(10,drag.X0+sh); S.b=Math.pow(10,drag.X1+sh); } else { const sh=-dx/g.pw*(drag.b-drag.a); S.a=drag.a+sh; S.b=drag.b+sh; if(S.a<0){S.b-=S.a;S.a=0;} } syncInputs(); render(); return; }
+  if(mx<geom.M.l||mx>geom.M.l+geom.pw) return hideTip();
+  render_hover(xFromPx(mx),e.clientX-r.left,e.clientY-r.top);
+});
+function render_hover(x,cx,cy){
+  // دوباره می‌کشیم و خط راهنما را روی بوم می‌گذاریم
+  const g=geom; const lines=[]; LAST.series.forEach(s=>{ let y; try{ y=value(s.f,x,LAST.refFn); }catch(e){ y=NaN; } lines.push({f:s.f,y}); });
+  tip.textContent=''; const t=el('b',null,'n = '+fmt(S.disc?Math.round(x):x)); tip.appendChild(t);
+  lines.forEach(l=>{ const row=el('div'); const i=el('i'); i.style.background=l.f.color; row.append(i,document.createTextNode((l.f.expr||'')+' = '+fmt(l.y))); tip.appendChild(row); });
+  tip.style.display='block'; const w=tip.offsetWidth; let left=cx+16; if(left+w>g.W-4) left=cx-w-16; tip.style.left=Math.max(4,left)+'px'; tip.style.top=Math.max(4,Math.min(g.H-tip.offsetHeight-4,cy-20))+'px';
+  drawOverlay(x,lines);
+}
+function drawOverlay(x,lines){
+  const g=geom; if(!g.snap){ g.snap=ctx.getImageData(0,0,cv.width,cv.height); }
+  ctx.putImageData(g.snap,0,0); const X=g.px(S.disc?Math.round(x):x); ctx.save(); ctx.beginPath(); ctx.rect(g.M.l,g.M.t,g.pw,g.ph); ctx.clip();
+  ctx.strokeStyle=TH.guide; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(X,g.M.t); ctx.lineTo(X,g.M.t+g.ph); ctx.stroke(); ctx.setLineDash([]);
+  lines.forEach(l=>{ let y=l.y; if(y===Infinity) return; if(!isFinite(y)||(S.ly&&y<=0)) return; const Y=g.py(y); ctx.fillStyle=l.f.color; ctx.strokeStyle=thc().bg; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(X,Y,5,0,7); ctx.fill(); ctx.stroke(); }); ctx.restore();
+}
+cv.addEventListener('pointerleave',()=>{ if(geom&&geom.snap){ ctx.putImageData(geom.snap,0,0); } tip.style.display='none'; });
+cv.addEventListener('pointerdown',e=>{ if(!geom) return; const r=cv.getBoundingClientRect(); drag={x:e.clientX-r.left,a:S.a,b:S.b,X0:geom.X0,X1:geom.X1}; cv.setPointerCapture(e.pointerId); cv.style.cursor='grabbing'; });
+const endDrag=()=>{ if(drag){ drag=null; cv.style.cursor='crosshair'; writeURL(); } };
+cv.addEventListener('pointerup',endDrag); cv.addEventListener('pointercancel',endDrag);
+cv.addEventListener('wheel',e=>{ e.preventDefault(); if(!geom) return; const r=cv.getBoundingClientRect(), mx=e.clientX-r.left; const f=e.deltaY<0?0.8:1.25; const g=geom;
+  const u=Math.min(1,Math.max(0,(mx-g.M.l)/g.pw));
+  if(S.lx){ const c=g.X0+u*(g.X1-g.X0), half0=(c-g.X0), half1=(g.X1-c); const na=c-half0*f, nb=c+half1*f; S.a=Math.pow(10,na); S.b=Math.pow(10,nb); }
+  else { const c=S.a+u*(S.b-S.a); S.a=c-(c-S.a)*f; S.b=c+(S.b-c)*f; if(S.a<0) S.a=0; }
+  if(!(S.b>S.a)) return; syncInputs(); render(); writeURL(); },{passive:false});
+cv.addEventListener('dblclick',()=>{ S.a=DEF.a; S.b=DEF.b; syncInputs(); render(); writeURL(); });
+if(window.ResizeObserver) new ResizeObserver(()=>{ if(geom) render(); }).observe($('cvw'));
+
+/* ================= شروع ================= */
+readURL(); buildPresets(); syncInputs(); $('lx').checked=S.lx; $('ly').checked=S.ly; $('disc').checked=S.disc; if(S.ymax) $('ymax').value=S.ymax;
+if(S.mode==='n0'){ [...$('mode').children].forEach(x=>x.classList.toggle('on',x.dataset.m==='n0')); $('n0wrap').style.display=''; }
+buildFnList(); fillRef(); paintN0(); paintPresets(); render();
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>render()); new MutationObserver(()=>render()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']}); }catch(e){}
+window.__plot={S,build,parse,fmt};
+})();
+</script>
+</body>
+</html>
